@@ -1,7 +1,7 @@
 name: Build and Deploy code
 on: [push,pull_request]
 jobs:
-    job1:
+    build:
         runs-on: ubuntu-latest
         steps:
             -   name: pulling git repo
@@ -15,4 +15,21 @@ jobs:
             -   name: Install all dependencies
                 run: pip install -r requirements.txt
 
-        
+    deploy:
+        runs-on: ubuntu-latest
+        needs: [build]
+        environment:
+            name: production
+        steps:
+        -   name: pulling git repo
+            uses: actions/checkout@v3
+        -   name: deploy to ubuntu server
+            uses: appleboy/ssh-action@master 
+            with:
+                host: ${{secrets.PROD_HOST}}
+                username: ${{secrets.PROD_USERNAME}}
+                password: ${{secrets.PROD_PASSWORD}}
+                script: |
+                    cd app/src
+                    git pull
+                    echo ${{secrets.PROD_PASSWORD}} | sudo -S systemctl restart api
